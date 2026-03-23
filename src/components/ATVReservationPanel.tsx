@@ -382,18 +382,6 @@ const ATVReservationPanel = () => {
                       <FileText className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-all shadow-sm border border-red-200 hover:border-red-500" onClick={async () => {
-                    if (confirm('Deseja realmente excluir esta reserva?')) {
-                      try {
-                        await removeReservation(r.id);
-                        toast.success('Reserva removida');
-                      } catch {
-                        toast.error('Erro ao remover');
-                      }
-                    }
-                  }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             ))}

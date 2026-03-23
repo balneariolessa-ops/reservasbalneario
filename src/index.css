@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 30% 97%;
+    --foreground: 150 25% 12%;
+
+    --card: 40 25% 95%;
+    --card-foreground: 150 25% 12%;
+
+    --popover: 40 30% 97%;
+    --popover-foreground: 150 25% 12%;
+
+    --primary: 145 45% 28%;
+    --primary-foreground: 40 30% 97%;
+
+    --secondary: 38 55% 55%;
+    --secondary-foreground: 40 30% 97%;
+
+    --muted: 40 20% 90%;
+    --muted-foreground: 150 10% 45%;
+
+    --accent: 38 70% 50%;
+    --accent-foreground: 40 30% 97%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 18% 85%;
+    --input: 40 18% 85%;
+    --ring: 145 45% 28%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 145 30% 15%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 38 55% 55%;
+    --sidebar-primary-foreground: 40 30% 97%;
+    --sidebar-accent: 145 25% 22%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 145 20% 25%;
+    --sidebar-ring: 38 55% 55%;
+
+    --success: 145 60% 40%;
+    --warning: 38 90% 50%;
+    --kiosk-available: 145 50% 42%;
+    --kiosk-booked: 0 60% 55%;
+    --kiosk-selected: 38 70% 50%;
+  }
+
+  .dark {
+    --background: 150 20% 8%;
+    --foreground: 40 30% 95%;
+    --card: 150 18% 12%;
+    --card-foreground: 40 30% 95%;
+    --popover: 150 18% 12%;
+    --popover-foreground: 40 30% 95%;
+    --primary: 145 45% 35%;
+    --primary-foreground: 40 30% 97%;
+    --secondary: 38 55% 50%;
+    --secondary-foreground: 40 30% 97%;
+    --muted: 150 15% 18%;
+    --muted-foreground: 40 15% 60%;
+    --accent: 38 70% 45%;
+    --accent-foreground: 40 30% 97%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 15% 20%;
+    --input: 150 15% 20%;
+    --ring: 145 45% 35%;
+    --sidebar-background: 150 20% 6%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 38 55% 50%;
+    --sidebar-primary-foreground: 40 30% 97%;
+    --sidebar-accent: 150 18% 12%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 150 15% 15%;
+    --sidebar-ring: 38 55% 50%;
+    --success: 145 50% 35%;
+    --warning: 38 80% 45%;
+    --kiosk-available: 145 50% 38%;
+    --kiosk-booked: 0 55% 45%;
+    --kiosk-selected: 38 65% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+}
+#lovable-badge { 
+  display: none !important; 
+}
+

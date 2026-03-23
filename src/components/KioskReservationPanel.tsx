@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, ClipboardList, Trash2, CalendarIcon } from 'lucide-react';
+import { Plus, ClipboardList, Trash2, CalendarIcon, Camera, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useKioskReservations } from '@/hooks/useReservations';
+import { useKioskReservations, uploadReceipt } from '@/hooks/useReservations';
 import { KIOSKS, PAYMENT_METHODS, isOpenDay } from '@/types/reservation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,8 @@ const KioskReservationPanel = () => {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { reservations, addReservation, removeReservation, isKioskBooked } = useKioskReservations();
 
@@ -41,7 +43,19 @@ const KioskReservationPanel = () => {
     const kiosk = KIOSKS.find(k => k.id === selectedKiosk)!;
     const finalCustomerName = customerName.trim() + (notes.trim() ? ` | Obs: ${notes.trim()}` : '');
 
+    setIsUploading(true);
     try {
+      let receiptUrl = '';
+      if (receiptFile) {
+        try {
+          receiptUrl = await uploadReceipt(receiptFile);
+        } catch (err) {
+          toast.error('Erro ao fazer upload do comprovante');
+          setIsUploading(false);
+          return;
+        }
+      }
+
       await addReservation({
         kioskId: selectedKiosk,
         kioskName: kiosk.name,
@@ -50,6 +64,7 @@ const KioskReservationPanel = () => {
         paymentMethod: paymentMethod as KioskPaymentMethod,
         paymentDate,
         price: kiosk.price,
+        receiptUrl
       });
       toast.success(`Reserva do ${kiosk.name} confirmada!`);
       setCustomerName('');
@@ -58,8 +73,11 @@ const KioskReservationPanel = () => {
       setPaymentDate('');
       setSelectedDateStr('');
       setSelectedKiosk(null);
+      setReceiptFile(null);
     } catch {
       toast.error('Erro ao salvar reserva');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -195,13 +213,56 @@ const KioskReservationPanel = () => {
                 className="rounded-xl min-h-[60px] font-bold border-2 bg-white border-[#86efac] focus-visible:ring-[#16a34a] text-[#14532d] placeholder:text-[#14532d]/40 resize-none shadow-sm"
               />
             </div>
+
+            <div className="space-y-1.5 pt-2">
+              <Label className="text-[12px] font-extrabold uppercase tracking-wider text-[#166534] ml-1">Anexar Comprovante (Imagem ou PDF)</Label>
+              <div className="relative">
+                <Input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setReceiptFile(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                  id="kiosk-receipt-upload"
+                />
+                <label
+                  htmlFor="kiosk-receipt-upload"
+                  className={cn(
+                    "flex items-center justify-center gap-3 w-full h-[52px] rounded-xl border-2 border-dashed cursor-pointer transition-all font-bold text-sm",
+                    receiptFile 
+                      ? "bg-[#dcfce7] border-[#16a34a] text-[#14532d]" 
+                      : "bg-white border-[#86efac] text-[#166534]/60 hover:bg-[#f0fdf4] hover:border-[#16a34a]"
+                  )}
+                >
+                  {receiptFile ? (
+                    <>
+                      <FileText className="w-5 h-5 text-[#16a34a]" />
+                      <span className="truncate max-w-[200px]">{receiptFile.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-5 h-5" />
+                      <span>Clique para anexar comprovante</span>
+                    </>
+                  )}
+                </label>
+              </div>
+            </div>
           </div>
 
           <Button
             onClick={handleSubmit}
-            className="w-full rounded-2xl h-[64px] text-lg font-extrabold bg-gradient-to-r from-[#16a34a] to-[#15803d] hover:from-[#15803d] hover:to-[#166534] text-white shadow-[0_10px_30px_-8px_rgba(22,163,74,0.7)] hover:-translate-y-1 active:translate-y-0 transition-all mt-6"
+            disabled={isUploading}
+            className="w-full rounded-2xl h-[64px] text-lg font-extrabold bg-gradient-to-r from-[#16a34a] to-[#15803d] hover:from-[#15803d] hover:to-[#166534] text-white shadow-[0_10px_30px_-8px_rgba(22,163,74,0.7)] hover:-translate-y-1 active:translate-y-0 transition-all mt-6 disabled:opacity-70 disabled:translate-y-0"
           >
-            ✅ Confirmar Reserva
+            {isUploading ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Salvando...</>
+            ) : (
+              <>✅ Confirmar Reserva</>
+            )}
           </Button>
         </div>
       </Card>
@@ -229,18 +290,35 @@ const KioskReservationPanel = () => {
                     <span className="text-[#16a34a] font-extrabold">R$ {r.price.toFixed(2)}</span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-all shadow-sm border border-red-200 hover:border-red-500" onClick={async () => {
-                  if (confirm('Deseja realmente excluir esta reserva?')) {
-                    try {
-                      await removeReservation(r.id);
-                      toast.success('Reserva removida');
-                    } catch {
-                      toast.error('Erro ao remover');
-                    }
-                  }
-                }}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {r.receiptUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-9 w-9 text-[#16a34a] border-[#16a34a] hover:bg-[#16a34a] hover:text-white rounded-full shadow-sm"
+                      onClick={() => window.open(r.receiptUrl, '_blank')}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-all shadow-sm border border-red-200 hover:border-red-500" 
+                    onClick={async () => {
+                      if (confirm('Deseja realmente excluir esta reserva?')) {
+                        try {
+                          await removeReservation(r.id);
+                          toast.success('Reserva removida');
+                        } catch {
+                          toast.error('Erro ao remover');
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

@@ -7,6 +7,7 @@ export interface KioskReservation {
   paymentMethod: 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito';
   paymentDate: string; // YYYY-MM-DD
   price: number;
+  receiptUrl?: string;
   createdAt: string;
 }
 
@@ -22,6 +23,7 @@ export interface ATVReservation {
   price: number;
   discount: number;
   finalPrice: number;
+  receiptUrl?: string;
   createdAt: string;
 }
 

@@ -2,6 +2,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { KioskReservation, ATVReservation } from '@/types/reservation';
 
+export const uploadReceipt = async (file: File) => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${crypto.randomUUID()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('receipts')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('receipts')
+    .getPublicUrl(filePath);
+
+  return publicUrl;
+};
+
 export function useKioskReservations() {
   const [reservations, setReservations] = useState<KioskReservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +42,7 @@ export function useKioskReservations() {
         paymentMethod: r.payment_method as KioskReservation['paymentMethod'],
         paymentDate: r.payment_date,
         price: Number(r.price),
+        receiptUrl: r.receipt_url,
         createdAt: r.created_at,
       })));
     }
@@ -51,6 +72,7 @@ export function useKioskReservations() {
       payment_method: reservation.paymentMethod,
       payment_date: reservation.paymentDate,
       price: reservation.price,
+      receipt_url: reservation.receiptUrl,
     }).select().single();
 
     if (!error && data) {
@@ -69,6 +91,7 @@ export function useKioskReservations() {
     if (updates.paymentMethod !== undefined) dbUpdates.payment_method = updates.paymentMethod;
     if (updates.paymentDate !== undefined) dbUpdates.payment_date = updates.paymentDate;
     if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.receiptUrl !== undefined) dbUpdates.receipt_url = updates.receiptUrl;
 
     const { error } = await supabase.from('kiosk_reservations').update(dbUpdates).eq('id', id);
     if (!error) await fetchReservations();
@@ -113,6 +136,7 @@ export function useATVReservations() {
         price: Number(r.price),
         discount: Number(r.discount),
         finalPrice: Number(r.final_price),
+        receiptUrl: r.receipt_url,
         createdAt: r.created_at,
       })));
     }
@@ -145,6 +169,7 @@ export function useATVReservations() {
       price: reservation.price,
       discount: reservation.discount,
       final_price: reservation.finalPrice,
+      receipt_url: reservation.receiptUrl,
     }).select().single();
 
     if (!error && data) {
@@ -166,6 +191,7 @@ export function useATVReservations() {
     if (updates.price !== undefined) dbUpdates.price = updates.price;
     if (updates.discount !== undefined) dbUpdates.discount = updates.discount;
     if (updates.finalPrice !== undefined) dbUpdates.final_price = updates.finalPrice;
+    if (updates.receiptUrl !== undefined) dbUpdates.receipt_url = updates.receiptUrl;
 
     const { error } = await supabase.from('atv_reservations').update(dbUpdates).eq('id', id);
     if (!error) await fetchReservations();

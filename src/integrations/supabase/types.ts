@@ -29,6 +29,7 @@ export type Database = {
           time_slot: string
           updated_at: string
           vehicle_count: number
+          receipt_url?: string | null
         }
         Insert: {
           created_at?: string
@@ -44,6 +45,7 @@ export type Database = {
           time_slot: string
           updated_at?: string
           vehicle_count?: number
+          receipt_url?: string | null
         }
         Update: {
           created_at?: string
@@ -59,6 +61,7 @@ export type Database = {
           time_slot?: string
           updated_at?: string
           vehicle_count?: number
+          receipt_url?: string | null
         }
         Relationships: []
       }
@@ -74,6 +77,7 @@ export type Database = {
           payment_method: string
           price: number
           updated_at: string
+          receipt_url?: string | null
         }
         Insert: {
           created_at?: string
@@ -86,6 +90,7 @@ export type Database = {
           payment_method: string
           price: number
           updated_at?: string
+          receipt_url?: string | null
         }
         Update: {
           created_at?: string
@@ -98,6 +103,7 @@ export type Database = {
           payment_method?: string
           price?: number
           updated_at?: string
+          receipt_url?: string | null
         }
         Relationships: []
       }

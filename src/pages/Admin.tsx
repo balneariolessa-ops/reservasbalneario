@@ -3,7 +3,7 @@ import { AdminLogin } from "@/components/admin/AdminLogin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut, RefreshCw, Trash2, Pencil, X, Check, CalendarCheck, Bike, Tent, History, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Loader2, LogOut, RefreshCw, Trash2, Pencil, X, Check, CalendarCheck, Bike, Tent, History, ChevronDown, ChevronUp, AlertTriangle, FileText } from "lucide-react";
 import { useKioskReservations, useATVReservations } from '@/hooks/useReservations';
 import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -337,6 +337,11 @@ const Admin = () => {
                               </>
                             ) : (
                               <>
+                                {r.receiptUrl && (
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-[#16a34a] hover:bg-[#dcfce7]" onClick={() => window.open(r.receiptUrl, '_blank')}>
+                                    <FileText className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-[#2563eb] hover:bg-[#dbeafe]" onClick={() => startEditKiosk(r)}><Pencil className="w-4 h-4" /></Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-red-500 hover:bg-red-100 hover:text-red-700" onClick={() => requestDelete('kiosk', r.id, r.customerName, `${r.kioskName} — ${format(new Date(r.date + 'T12:00:00'), 'dd/MM/yyyy')}`)}>
                                   <Trash2 className="w-4 h-4" />
@@ -498,6 +503,11 @@ const Admin = () => {
                               </>
                             ) : (
                               <>
+                                {r.receiptUrl && (
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-[#2563eb] hover:bg-[#eff6ff]" onClick={() => window.open(r.receiptUrl, '_blank')}>
+                                    <FileText className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-[#2563eb] hover:bg-[#dbeafe]" onClick={() => startEditATV(r)}><Pencil className="w-4 h-4" /></Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-red-500 hover:bg-red-100 hover:text-red-700" onClick={() => requestDelete('atv', r.id, r.customerName, `${r.timeSlot} — ${format(new Date(r.date + 'T12:00:00'), 'dd/MM/yyyy')}`)}>
                                   <Trash2 className="w-4 h-4" />

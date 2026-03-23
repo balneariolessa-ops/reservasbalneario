@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClipboardList, Trash2, Bike, CalendarIcon } from 'lucide-react';
+import { ClipboardList, Trash2, Bike, CalendarIcon, Camera, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useATVReservations } from '@/hooks/useReservations';
+import { useATVReservations, uploadReceipt } from '@/hooks/useReservations';
 import { ATV_TIME_SLOTS, ATV_RIDE_TYPES, TOTAL_ATV_VEHICLES, PAYMENT_METHODS, getDayDiscount, getDayName, isOpenDay } from '@/types/reservation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,8 @@ const ATVReservationPanel = () => {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { reservations, addReservation, removeReservation, getVehiclesBookedForSlot } = useATVReservations();
 
@@ -50,7 +52,19 @@ const ATVReservationPanel = () => {
 
     const finalCustomerName = customerName.trim() + (notes.trim() ? ` | Obs: ${notes.trim()}` : '');
 
+    setIsUploading(true);
     try {
+      let receiptUrl = '';
+      if (receiptFile) {
+        try {
+          receiptUrl = await uploadReceipt(receiptFile);
+        } catch (err) {
+          toast.error('Erro ao fazer upload do comprovante');
+          setIsUploading(false);
+          return;
+        }
+      }
+
       await addReservation({
         date: selectedDateStr,
         timeSlot: selectedSlot,
@@ -62,6 +76,7 @@ const ATVReservationPanel = () => {
         price: basePrice,
         discount: discountAmount,
         finalPrice,
+        receiptUrl
       });
 
       toast.success('Reserva de quadriciclo confirmada!');
@@ -73,8 +88,11 @@ const ATVReservationPanel = () => {
       setPaymentMethod('');
       setPaymentDate('');
       setSelectedDateStr('');
+      setReceiptFile(null);
     } catch {
       toast.error('Erro ao salvar reserva');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -250,6 +268,44 @@ const ATVReservationPanel = () => {
                 className="rounded-xl min-h-[60px] font-bold border-2 bg-white border-[#93c5fd] focus-visible:ring-[#2563eb] text-[#1e3a8a] placeholder:text-[#1e3a8a]/40 resize-none shadow-sm"
               />
             </div>
+
+            <div className="space-y-1.5 pt-2">
+              <Label className="text-[12px] font-extrabold uppercase tracking-wider text-[#1e3a8a] ml-1">Anexar Comprovante (Imagem ou PDF)</Label>
+              <div className="relative">
+                <Input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setReceiptFile(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                  id="atv-receipt-upload"
+                />
+                <label
+                  htmlFor="atv-receipt-upload"
+                  className={cn(
+                    "flex items-center justify-center gap-3 w-full h-[52px] rounded-xl border-2 border-dashed cursor-pointer transition-all font-bold text-sm",
+                    receiptFile 
+                      ? "bg-[#dbeafe] border-[#2563eb] text-[#1e3a8a]" 
+                      : "bg-white border-[#93c5fd] text-[#1e3a8a]/60 hover:bg-[#eff6ff] hover:border-[#2563eb]"
+                  )}
+                >
+                  {receiptFile ? (
+                    <>
+                      <FileText className="w-5 h-5 text-[#2563eb]" />
+                      <span className="truncate max-w-[200px]">{receiptFile.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-5 h-5" />
+                      <span>Clique para anexar comprovante</span>
+                    </>
+                  )}
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Price Summary */}
@@ -274,9 +330,14 @@ const ATVReservationPanel = () => {
 
           <Button
             onClick={handleSubmit}
-            className="w-full rounded-2xl h-[64px] text-lg font-extrabold bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e3a8a] text-white shadow-[0_10px_30px_-8px_rgba(37,99,235,0.7)] hover:-translate-y-1 active:translate-y-0 transition-all mt-6"
+            disabled={isUploading}
+            className="w-full rounded-2xl h-[64px] text-lg font-extrabold bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e3a8a] text-white shadow-[0_10px_30px_-8px_rgba(37,99,235,0.7)] hover:-translate-y-1 active:translate-y-0 transition-all mt-6 disabled:opacity-70 disabled:translate-y-0"
           >
-            🏍️ Confirmar Reserva
+            {isUploading ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Salvando...</>
+            ) : (
+              <>🏍️ Confirmar Reserva</>
+            )}
           </Button>
         </div>
       </Card>
@@ -310,18 +371,30 @@ const ATVReservationPanel = () => {
                     <span className="font-extrabold text-[#16a34a]">R$ {r.finalPrice.toFixed(2)}</span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-all shadow-sm border border-red-200 hover:border-red-500" onClick={async () => {
-                  if (confirm('Deseja realmente excluir esta reserva?')) {
-                    try {
-                      await removeReservation(r.id);
-                      toast.success('Reserva removida');
-                    } catch {
-                      toast.error('Erro ao remover');
+                <div className="flex items-center gap-2">
+                  {r.receiptUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-9 w-9 text-[#2563eb] border-[#2563eb] hover:bg-[#2563eb] hover:text-white rounded-full shadow-sm"
+                      onClick={() => window.open(r.receiptUrl, '_blank')}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-all shadow-sm border border-red-200 hover:border-red-500" onClick={async () => {
+                    if (confirm('Deseja realmente excluir esta reserva?')) {
+                      try {
+                        await removeReservation(r.id);
+                        toast.success('Reserva removida');
+                      } catch {
+                        toast.error('Erro ao remover');
+                      }
                     }
-                  }
-                }}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

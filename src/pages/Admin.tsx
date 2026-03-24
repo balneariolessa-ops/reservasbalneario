@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogOut, RefreshCw, Trash2, Pencil, X, Check, CalendarCheck, Bike, Tent, History, ChevronDown, ChevronUp, AlertTriangle, FileText } from "lucide-react";
-import { useKioskReservations, useATVReservations } from '@/hooks/useReservations';
+import { useKioskReservations, useATVReservations, uploadReceipt } from '@/hooks/useReservations';
 import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAYMENT_METHODS, KIOSKS, ATV_TIME_SLOTS } from '@/types/reservation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, FileCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,8 @@ const Admin = () => {
   const [editKioskDate, setEditKioskDate] = useState('');
   const [editKioskKioskId, setEditKioskKioskId] = useState<number>(0);
   const [editKioskPrice, setEditKioskPrice] = useState('');
+  const [editKioskReceipt, setEditKioskReceipt] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // ATV edit states
   const [editingATVId, setEditingATVId] = useState<string | null>(null);
@@ -44,6 +47,7 @@ const Admin = () => {
   const [editATVDate, setEditATVDate] = useState('');
   const [editATVTimeSlot, setEditATVTimeSlot] = useState('');
   const [editATVVehicleCount, setEditATVVehicleCount] = useState('1');
+  const [editATVReceipt, setEditATVReceipt] = useState<string | null>(null);
 
   // Delete confirmation states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -75,8 +79,28 @@ const Admin = () => {
     setEditKioskDate(r.date);
     setEditKioskKioskId(r.kioskId);
     setEditKioskPrice(r.price.toString());
+    setEditKioskReceipt(r.receiptUrl || null);
   };
-  const cancelEditKiosk = () => setEditingKioskId(null);
+
+  const handleFileUpload = async (file: File, type: 'kiosk' | 'atv') => {
+    setIsUploading(true);
+    try {
+      const url = await uploadReceipt(file);
+      if (type === 'kiosk') setEditKioskReceipt(url);
+      else setEditATVReceipt(url);
+      toast({ title: "Comprovante enviado com sucesso!" });
+    } catch (error) {
+      toast({ title: "Erro ao enviar comprovante", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const cancelEditKiosk = () => {
+    setEditingKioskId(null);
+    setEditKioskReceipt(null);
+  };
+
   const saveEditKiosk = async () => {
     if (!editingKioskId) return;
     const selectedKiosk = KIOSKS.find(k => k.id === editKioskKioskId);
@@ -88,6 +112,7 @@ const Admin = () => {
         kioskId: editKioskKioskId,
         kioskName: selectedKiosk?.name || '',
         price: parseFloat(editKioskPrice) || 0,
+        receiptUrl: editKioskReceipt || undefined,
       });
       toast({ title: "✅ Reserva atualizada!" });
       setEditingKioskId(null);
@@ -104,8 +129,12 @@ const Admin = () => {
     setEditATVDate(r.date);
     setEditATVTimeSlot(r.timeSlot);
     setEditATVVehicleCount(r.vehicleCount.toString());
+    setEditATVReceipt(r.receiptUrl || null);
   };
-  const cancelEditATV = () => setEditingATVId(null);
+  const cancelEditATV = () => {
+    setEditingATVId(null);
+    setEditATVReceipt(null);
+  };
   const saveEditATV = async () => {
     if (!editingATVId) return;
     try {
@@ -115,6 +144,7 @@ const Admin = () => {
         date: editATVDate,
         timeSlot: editATVTimeSlot,
         vehicleCount: parseInt(editATVVehicleCount) || 1,
+        receiptUrl: editATVReceipt || undefined,
       });
       toast({ title: "✅ Reserva atualizada!" });
       setEditingATVId(null);
@@ -332,6 +362,29 @@ const Admin = () => {
                           <div className="flex items-center justify-end gap-1.5">
                             {isEditing ? (
                               <>
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    id={`kiosk-file-upload-${r.id}`}
+                                    className="hidden"
+                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], 'kiosk')}
+                                    disabled={isUploading}
+                                  />
+                                  <label
+                                    htmlFor={`kiosk-file-upload-${r.id}`}
+                                    className={`flex items-center justify-center h-8 w-8 rounded-lg cursor-pointer transition-colors ${
+                                      editKioskReceipt ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                                    } hover:bg-opacity-80`}
+                                  >
+                                    {isUploading ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : editKioskReceipt ? (
+                                      <FileCheck className="w-4 h-4" />
+                                    ) : (
+                                      <Upload className="w-4 h-4" />
+                                    )}
+                                  </label>
+                                </div>
                                 <Button size="icon" className="h-8 w-8 rounded-lg bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm" onClick={saveEditKiosk}><Check className="w-4 h-4" /></Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-slate-200" onClick={cancelEditKiosk}><X className="w-4 h-4" /></Button>
                               </>
@@ -398,6 +451,14 @@ const Admin = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="font-extrabold text-[#166534] text-sm">R$ {r.price.toFixed(2)}</span>
+                                  {r.receiptUrl && (
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#16a34a] hover:bg-[#dcfce7]" onClick={() => window.open(r.receiptUrl, '_blank')}>
+                                      <FileText className="w-3.5 h-3.5" />
+                                    </Button>
+                                  )}
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#2563eb] hover:bg-[#dbeafe]" onClick={() => startEditKiosk(r)}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
                                   <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-red-500 hover:bg-red-100" onClick={() => requestDelete('kiosk', r.id, r.customerName, `${r.kioskName} — ${format(new Date(r.date + 'T12:00:00'), 'dd/MM/yyyy')}`)}>
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
@@ -498,6 +559,29 @@ const Admin = () => {
                           <div className="flex items-center justify-end gap-1.5">
                             {isEditing ? (
                               <>
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    id={`atv-file-upload-${r.id}`}
+                                    className="hidden"
+                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], 'atv')}
+                                    disabled={isUploading}
+                                  />
+                                  <label
+                                    htmlFor={`atv-file-upload-${r.id}`}
+                                    className={`flex items-center justify-center h-8 w-8 rounded-lg cursor-pointer transition-colors ${
+                                      editATVReceipt ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                                    } hover:bg-opacity-80`}
+                                  >
+                                    {isUploading ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : editATVReceipt ? (
+                                      <FileCheck className="w-4 h-4" />
+                                    ) : (
+                                      <Upload className="w-4 h-4" />
+                                    )}
+                                  </label>
+                                </div>
                                 <Button size="icon" className="h-8 w-8 rounded-lg bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-sm" onClick={saveEditATV}><Check className="w-4 h-4" /></Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-slate-200" onClick={cancelEditATV}><X className="w-4 h-4" /></Button>
                               </>
@@ -565,6 +649,14 @@ const Admin = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="font-extrabold text-[#1d4ed8] text-sm">R$ {r.finalPrice.toFixed(2)}</span>
+                                  {r.receiptUrl && (
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#2563eb] hover:bg-[#eff6ff]" onClick={() => window.open(r.receiptUrl, '_blank')}>
+                                      <FileText className="w-3.5 h-3.5" />
+                                    </Button>
+                                  )}
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#2563eb] hover:bg-[#dbeafe]" onClick={() => startEditATV(r)}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
                                   <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-red-500 hover:bg-red-100" onClick={() => requestDelete('atv', r.id, r.customerName, `${r.timeSlot} — ${format(new Date(r.date + 'T12:00:00'), 'dd/MM/yyyy')}`)}>
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>

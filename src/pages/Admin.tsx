@@ -235,12 +235,12 @@ const Admin = () => {
             <p className="text-[12px] font-extrabold text-[#1e3a8a] uppercase mt-1">Quadriciclos Ativos</p>
           </div>
           <div className="bg-white rounded-2xl p-5 border-2 border-[#f59e0b]/30 shadow-md text-center">
-            <p className="text-3xl font-black text-[#d97706]">R$ {kioskReservations.reduce((s, r) => s + r.price, 0).toFixed(0)}</p>
-            <p className="text-[12px] font-extrabold text-[#92400e] uppercase mt-1">Receita Quiosques</p>
+            <p className="text-3xl font-black text-[#d97706]">R$ {currentKiosk.reduce((s, r) => s + r.price, 0).toFixed(0)}</p>
+            <p className="text-[12px] font-extrabold text-[#92400e] uppercase mt-1">Receita Ativa (Qui.)</p>
           </div>
           <div className="bg-white rounded-2xl p-5 border-2 border-[#f59e0b]/30 shadow-md text-center">
-            <p className="text-3xl font-black text-[#d97706]">R$ {atvReservations.reduce((s, r) => s + r.finalPrice, 0).toFixed(0)}</p>
-            <p className="text-[12px] font-extrabold text-[#92400e] uppercase mt-1">Receita Quadri.</p>
+            <p className="text-3xl font-black text-[#d97706]">R$ {currentATV.reduce((s, r) => s + r.finalPrice, 0).toFixed(0)}</p>
+            <p className="text-[12px] font-extrabold text-[#92400e] uppercase mt-1">Receita Ativa (Quad.)</p>
           </div>
         </div>
 
@@ -248,10 +248,10 @@ const Admin = () => {
         <Tabs defaultValue="quiosques" className="w-full">
           <TabsList className="grid grid-cols-2 max-w-md mb-6 h-[56px] rounded-2xl bg-white/80 backdrop-blur-sm p-2 border-2 border-[#166534]/20 shadow-md">
             <TabsTrigger value="quiosques" className="rounded-xl font-extrabold text-[15px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#16a34a] data-[state=active]:to-[#15803d] data-[state=active]:text-white data-[state=active]:shadow-md transition-all text-[#14532d] hover:bg-[#dcfce7] active:scale-95">
-              <Tent className="w-4 h-4 mr-2" /> Quiosques ({kioskReservations.length})
+              <Tent className="w-4 h-4 mr-2" /> Quiosques ({currentKiosk.length})
             </TabsTrigger>
             <TabsTrigger value="quadriciclos" className="rounded-xl font-extrabold text-[15px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#2563eb] data-[state=active]:to-[#1d4ed8] data-[state=active]:text-white data-[state=active]:shadow-md transition-all text-[#14532d] hover:bg-[#dbeafe] active:scale-95">
-              <Bike className="w-4 h-4 mr-2" /> Quadriciclos ({atvReservations.length})
+              <Bike className="w-4 h-4 mr-2" /> Quadriciclos ({currentATV.length})
             </TabsTrigger>
           </TabsList>
 
